@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AgentScope - Local Agent Observability</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 20px; background: #0f172a; color: #e6eef8; }
+    .container { max-width: 1100px; margin: auto; }
+    .runs, .nodes { display:inline-block; vertical-align: top; width: 48%; margin-right: 2%; }
+    pre { background: #071129; padding: 10px; border-radius: 6px; overflow-x:auto; }
+    .node { padding:8px; border-radius:6px; margin-bottom:8px; background:#0b1220; }
+    .error { color: #ff7b7b; }
+    a { color: #9ae6b4; }
+    button { background:#1f2937; color:#e6eef8; border: none; padding:8px 10px; border-radius:6px; margin-left:8px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>AgentScope — Local Agent Observability</h1>
+  <div>
+    <button onclick="refreshRuns()">Refresh Runs</button>
+    <span id="status"></span>
+  </div>
+  <div style="height:20px;"></div>
+  <div class="runs">
+    <h3>Recent Runs</h3>
+    <div id="runs-list">Loading...</div>
+  </div>
+  <div class="nodes">
+    <h3>Nodes</h3>
+    <div id="nodes-list">Select a run to view nodes.</div>
+  </div>
+</div>
+
+<script>
+async function fetchJson(path){ return (await fetch(path)).json(); }
+async function refreshRuns(){
+  document.getElementById('status').innerText = 'loading...';
+  const runs = await fetchJson('/api/runs');
+  const el = document.getElementById('runs-list');
+  el.innerHTML = '';
+  if(!runs || runs.length===0){ el.innerText = 'no runs yet'; document.getElementById('status').innerText = ''; return; }
+  runs.forEach(r=>{
+    const d = document.createElement('div');
+    d.style.padding='8px'; d.style.marginBottom='6px'; d.style.background='#071229'; d.style.borderRadius='6px';
+    const t = new Date(r.started_at*1000).toLocaleString();
+    d.innerHTML = `<b>run_id:</b> <a href="#" onclick="loadNodes('${r.run_id}');return false;">${r.run_id}</a><br><small>${t}</small>`;
+    el.appendChild(d);
+  });
+  document.getElementById('status').innerText = '';
+}
+
+async function loadNodes(run_id){
+  document.getElementById('nodes-list').innerText = 'loading...';
+  const nodes = await fetchJson('/api/nodes/' + encodeURIComponent(run_id));
+  const el = document.getElementById('nodes-list');
+  el.innerHTML = '';
+  if(!nodes || nodes.length===0){ el.innerText='no nodes'; return; }
+  nodes.forEach(n=>{
+    const nd = document.createElement('div'); nd.className='node';
+    const errHtml = n.error ? `<div class="error">ERROR: ${JSON.stringify(n.error)}</div>` : '';
+    nd.innerHTML = `<b>${n.name}</b> — model:${n.model} — duration:${n.duration.toFixed(2)}s — attempt:${n.attempt}<br>
+      ${errHtml}
+      <details><summary>input</summary><pre>${JSON.stringify(n.input, null, 2)}</pre></details>
+      <details><summary>output</summary><pre>${JSON.stringify(n.output, null, 2)}</pre></details>`;
+    el.appendChild(nd);
+  });
+}
+
+refreshRuns();
+setInterval(refreshRuns, 3000);
+</script>
+</body>
+</html>
