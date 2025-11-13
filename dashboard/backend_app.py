@@ -27,23 +27,59 @@ def nodes(run_id: str):
         raise HTTPException(status_code=404, detail="DB not found")
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-    cur.execute("SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model FROM nodes WHERE run_id=? ORDER BY ts ASC", (run_id,))
-    rows = cur.fetchall()
-    out = []
-    for r in rows:
-        out.append({
-            "id": r[0],
-            "agent_id": r[1],
-            "name": r[2],
-            "input": json.loads(r[3]) if r[3] else {},
-            "output": json.loads(r[4]) if r[4] else {},
-            "duration": r[5],
-            "attempt": r[6],
-            "error": json.loads(r[7]) if r[7] else None,
-            "ts": r[8],
-            "model": r[9],
-        })
-    return out
+    
+    # Check if metadata column exists to handle both old and new schemas
+    try:
+        cur.execute("PRAGMA table_info(nodes)")
+        columns = [row[1] for row in cur.fetchall()]
+        has_metadata = 'metadata' in columns
+        
+        if has_metadata:
+            cur.execute("SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model, metadata FROM nodes WHERE run_id=? ORDER BY ts ASC", (run_id,))
+        else:
+            cur.execute("SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model FROM nodes WHERE run_id=? ORDER BY ts ASC", (run_id,))
+        
+        rows = cur.fetchall()
+        out = []
+        for r in rows:
+            node = {
+                "id": r[0],
+                "agent_id": r[1],
+                "name": r[2],
+                "input": json.loads(r[3]) if r[3] else {},
+                "output": json.loads(r[4]) if r[4] else {},
+                "duration": r[5],
+                "attempt": r[6],
+                "error": json.loads(r[7]) if r[7] else None,
+                "ts": r[8],
+                "model": r[9],
+            }
+            if has_metadata and len(r) > 10:
+                node["metadata"] = json.loads(r[10]) if r[10] else None
+            else:
+                node["metadata"] = None
+            out.append(node)
+        return out
+    except Exception as e:
+        # Fallback to old schema if error occurs
+        cur.execute("SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model FROM nodes WHERE run_id=? ORDER BY ts ASC", (run_id,))
+        rows = cur.fetchall()
+        out = []
+        for r in rows:
+            out.append({
+                "id": r[0],
+                "agent_id": r[1],
+                "name": r[2],
+                "input": json.loads(r[3]) if r[3] else {},
+                "output": json.loads(r[4]) if r[4] else {},
+                "duration": r[5],
+                "attempt": r[6],
+                "error": json.loads(r[7]) if r[7] else None,
+                "ts": r[8],
+                "model": r[9],
+                "metadata": None,
+            })
+        return out
 
 @app.get("/api/contexts/{run_id}")
 def contexts(run_id: str):

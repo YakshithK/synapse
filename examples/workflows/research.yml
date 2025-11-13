@@ -1,0 +1,25 @@
+# examples/workflows/sales-research.yml
+workflow:
+  name: sales-research-pipeline
+  agents:
+    - name: ResearchAgent
+      run: research_agent.py
+      retries: 2
+      model: gpt-4
+      description: "Researches topics and returns papers"
+      timeout: 60
+    - name: AnalysisAgent
+      run: analysis_agent.py
+      depends_on: ResearchAgent
+      retries: 1
+      model: gpt-4
+    - name: WriterAgent
+      run: writer_agent.py
+      depends_on: AnalysisAgent
+      retries: 1
+      model: gpt-4
+    - name: ReviewerAgent
+      run: reviewer_agent.py
+      depends_on: WriterAgent
+      retries: 1
+      model: gpt-4

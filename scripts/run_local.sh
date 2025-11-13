@@ -10,5 +10,6 @@ sleep 1
 
 # Run example workflow
 echo "Running example workflow..."
-python -m synapse.cli run examples/research.yml --prompt "neural rendering"
+# Line 13: Update path
+python3 -m synapse.cli run examples/workflows/research.yml --prompt "neural rendering"
 echo "Done. Open dashboard at http://127.0.0.1:8080 to view traces."
