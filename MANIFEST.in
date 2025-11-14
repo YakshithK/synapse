@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include examples *.yaml
+recursive-include synapse *.db
+recursive-include synapse *.md

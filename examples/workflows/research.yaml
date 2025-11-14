@@ -1,4 +1,4 @@
-# examples/workflows/sales-research.yml
+# examples/workflows/sales-research.yaml
 workflow:
   name: sales-research-pipeline
   agents:

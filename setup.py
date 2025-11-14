@@ -7,12 +7,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="synapse",
     version="0.1.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Yakshith Kommineni",
+    author_email="yakshith.kommineni@gmail.com",
     description="Kubernetes-like orchestration system for AI agents",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/synapse",
+    url="https://github.com/YakshithK/synapse",
     packages=find_packages(exclude=["venv", "tests", "examples", "scripts", "dashboard"]),
     classifiers=[
         "Development Status :: 3 - Alpha",
