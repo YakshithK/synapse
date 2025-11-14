@@ -5,8 +5,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="synapse",
-    version="0.1.0",
+    name="agent-synapse",
+    version="0.1.2",  # Updated version for agent-synapse
     author="Yakshith Kommineni",
     author_email="yakshith.kommineni@gmail.com",
     description="Kubernetes-like orchestration system for AI agents",
@@ -31,7 +31,19 @@ setup(
         "fastapi>=0.100.0",
         "uvicorn>=0.23.0",
         "jinja2>=3.1.0",
+        "sqlalchemy>=2.0.0",
+        "pydantic>=2.0.0",
+        "rich>=13.0.0",
     ],
+    extras_require={
+        "dev": [
+            "pytest>=7.0.0",
+            "black>=23.0.0",
+            "isort>=5.12.0",
+            "mypy>=1.0.0",
+            "pytest-cov>=4.0.0",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "synapse=synapse.cli:app",
@@ -39,6 +51,15 @@ setup(
     },
     include_package_data=True,
     package_data={
-        "synapse": ["py.typed"],
+        "synapse": [
+            "py.typed",
+            "templates/*.html",  # Include dashboard templates
+            "static/*",          # Include static files
+        ],
+    },
+    project_urls={
+        "Documentation": "https://github.com/YakshithK/synapse#readme",
+        "Bug Reports": "https://github.com/YakshithK/synapse/issues",
+        "Source": "https://github.com/YakshithK/synapse",
     },
 )
