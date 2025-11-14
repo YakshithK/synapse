@@ -15,6 +15,7 @@ class Orchestrator:
         self.run_id = None
         self.agents = {}
         self.agent_loader = AgentLoader(agent_dir=self.workflow.get('workflow_dir'))
+        self.execution_results = []
         
         # Backward compatibility: check if old schema
         self.use_new_schema = self.workflow.get('schema_version') == '2.0'
@@ -117,6 +118,7 @@ class Orchestrator:
         self.trace.start_run(self.run_id, workflow=workflow_name)
         self.trace.current_run_id = self.run_id
         self._instantiate_agents()
+        self.execution_results = []
         
         context = {"input": initial_input}
         version = 0
@@ -130,9 +132,56 @@ class Orchestrator:
                 
                 version += 1
                 self.trace.record_context_version(self.run_id, version, agent_name, context)
+
+                # Track execution
+                agent_start = time.time()
+                last_error = None
+                attempts = 0
+
+                try:
                 
-                out = agent.run(context, tracer=self.trace)
-                context["last_output"] = out
+                    out = agent.run(context, tracer=self.trace)
+                    agent_duration = time.time() - agent_start
+                    attempts = 1
+
+                    # get attempts from trace
+                    nodes = self.trace.fetch_nodes(self.run_id)
+                    agent_nodes = [n for n in nodes if n['name'] == agent_name]
+
+                    if agent_nodes:
+                        attempts = max([n['attempt'] for n in agent_nodes])
+
+                    self.execution_results.append({
+                        'agent_name': agent_name,
+                        'status': 'retry_success' if attempts > 1 else 'success',
+                        'duration': agent_duration,
+                        'attempts': attempts,
+                        'model': agent.model,
+                        'error_type': None,
+                    })
+
+                    context["last_output"] = out
+                
+                except Exception as e:
+                    agent_duration = time.time() - agent_start
+                    attempts = 1
+
+                    # get attempts from trace
+                    nodes = self.trace.fetch_nodes(self.run_id)
+                    agent_nodes = [n for n in nodes if n['name'] == agent_name]
+                    if agent_nodes:
+                        attempts = max([n['attempt'] for n in agent_nodes])
+                    
+                    self.execution_results.append({
+                        'agent_name': agent_name,
+                        'status': 'failed',
+                        'duration': agent_duration,
+                        'attempts': attempts,
+                        'model': agent.model,
+                        'error_type': type(e).__name__,
+                    })
+                    raise
+                
         else:
             # Old schema: sequential execution
             current = self.start_node
@@ -155,3 +204,7 @@ class Orchestrator:
         version += 1
         self.trace.record_context_version(self.run_id, version, "end", context)
         return {"run_id": self.run_id, "final_context": context}
+
+    def get_execution_results(self):
+        """Get execution results for CLI display."""
+        return self.execution_results
