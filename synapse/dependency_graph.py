@@ -1,6 +1,6 @@
 # synapse/dependancy_graph.py
-from typing import List, Dict, Set, Any
 from collections import deque, defaultdict
+from typing import List, Dict, Set, Any
 
 class DependencyGraph:
     """
@@ -51,7 +51,7 @@ class DependencyGraph:
             List of agent names in execution order
         """
 
-        # kahn's algorithm for topological sort
+        # Kahn's algorithm for topological sort
         in_degree = defaultdict(int)
         for agent in self.agents:
             in_degree[agent['name']] = len(self.graph.get(agent['name'], set()))

@@ -1,11 +1,13 @@
 # synapse/orchestrator.py
-import uuid, time
-from .yaml_loader import load_workflow
-from .trace import TraceStore
+import time
+import uuid
+from typing import Any, Dict, List
+
+from .agent import Agent
 from .agent_loader import AgentLoader
 from .dependency_graph import DependencyGraph
-from .agent import Agent
-from typing import Dict, Any, List
+from .trace import TraceStore
+from .yaml_loader import load_workflow
 
 class Orchestrator:
     def __init__(self, workflow_path: str):

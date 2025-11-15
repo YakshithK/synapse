@@ -1,7 +1,8 @@
 # synapse/yaml_loader.py
-import yaml
-from typing import Dict, Any, Optional
 import os
+from typing import Any, Dict, Optional
+
+import yaml
 
 def load_workflow(path: str) -> Dict[str, Any]:
     """
