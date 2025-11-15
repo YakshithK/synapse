@@ -1,14 +1,16 @@
 # synapse/cli.py
-import typer
-from .orchestrator import Orchestrator
-import uvicorn
 import os
-import sys
 import subprocess
+import sys
 import time
-from typing import Optional
+
+import typer
+import uvicorn
 from rich.console import Console
 from rich.table import Table
+
+from .orchestrator import Orchestrator
+from typing import Optional
 
 app = typer.Typer()
 console = Console()
@@ -20,7 +22,7 @@ MODEL_COSTS = {
     "mock": 0.0
 }
 
-def format_duration(seconds:float) -> str:
+def format_duration(seconds: float) -> str:
     """Format duration in seconds to readable string."""
     if seconds < 1:
         return f"{seconds*1000:.0f}ms"
@@ -33,7 +35,7 @@ def calculate_cost(model: str, tokens: int = 0) -> float:
     return MODEL_COSTS.get(model, 0.0) * (tokens / 1000) if tokens > 0 else 0.001
 
 @app.command()
-def run (
+def run(
     workflow: str = typer.Argument(..., help="Path to workflow YAML file"),
     prompt: str = typer.Option(..., "--prompt", "-p", help="Initial prompt/input"),
     ui: bool = typer.Option(False, "--ui", "-u", help="Start dashboard UI server"),
@@ -59,16 +61,15 @@ def run (
     if ui:
         console.print(f"[cyan]Starting dashboard on http://localhost:{port}...[/cyan]")
         dashboard_process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "synapse.dashboard.backend_app:app",
-            "--host", "127.0.0.1", "--port", str(port)],
-            stdout = subprocess.PIPE,
-            stderr=subprocess.PIPE
+            [sys.executable, "-m", "uvicorn", "synapse.dashboard.backend_app:app", "--host", "127.0.0.1", "--port", str(port)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         time.sleep(2) # give server time to start
         console.print(f"[green]✓[/green] Dashboard running at http://localhost:{port}\n")
 
     try:
-        # initalize orchestrator
+        # initialize orchestrator
         orch = Orchestrator(workflow)
 
         # run workflow

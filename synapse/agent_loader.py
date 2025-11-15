@@ -1,11 +1,9 @@
 # synapse/agent_loader.py
-import importlib.util
 import ast
+import importlib.util
 import os
 import sys
-from typing import Dict, Any, Callable, Optional, List
-import traceback
-from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
 class AgentLoader:
     """

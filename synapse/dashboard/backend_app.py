@@ -1,10 +1,11 @@
 # dashboard/backend_app.py
-from fastapi import FastAPI, HTTPException
+import json
+import os
+import sqlite3
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import sqlite3, json, os
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
 
 DB = os.path.join(os.getcwd(), "synapse_traces.db")
 app = FastAPI()

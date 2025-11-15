@@ -1,17 +1,23 @@
 # synapse/agent.py
-from typing import Callable, Any, Dict, Optional
-import time 
+import time
+import traceback 
 import uuid
-import traceback
+from typing import Any, Callable, Dict, Optional
 
 class Agent:
     """
     Enhanced Agent abstraction with metadata support.
     """
     
-    def __init__(self, name: str, func: Callable[[Dict], Any], 
-                 model: str = "mock", retries: int = 1, 
-                 timeout_s: float = 30.0, metadata: Optional[Dict] = None):
+    def __init__(
+        self,
+        name: str,
+        func: Callable[[Dict], Any],
+        model: str = "mock",
+        retries: int = 1,
+        timeout_s: float = 30.0,
+        metadata: Optional[Dict] = None,
+    ):
         self.name = name
         self.func = func
         self.model = model
@@ -107,7 +113,13 @@ class Agent:
 
 class AgentExecutionError(Exception):
     """Custom exception for agent execution errors."""
-    def __init__(self, message: str, agent_name: str, last_error: Exception = None, context: dict = None):
+    def __init__(
+        self,
+        message: str,
+        agent_name: str,
+        last_error: Exception = None,
+        context: dict = None,
+    ):
         self.message = message
         self.agent_name = agent_name
         self.last_error = last_error

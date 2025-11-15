@@ -1,5 +1,8 @@
 # synapse/trace.py
-import sqlite3, json, time, os
+import json
+import os
+import sqlite3
+import time
 from typing import Optional
 
 DB_PATH = os.path.join(os.getcwd(), "synapse_traces.db")

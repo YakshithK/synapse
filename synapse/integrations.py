@@ -5,11 +5,11 @@ We intentionally keep models mocked for demo. Please replace
 with OpenAI calls or Llama binding later.
 """
 
-import time, random
+import time
 
 def builtin_research(context):
     """
-    pretend to fetc paper: output list of 'paper' dicts
+    pretend to fetch paper: output list of 'paper' dicts
     """
     topic = context.get("input") or context.get("topic") or "unknown"
     # simulate latency
