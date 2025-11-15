@@ -7,6 +7,7 @@ with OpenAI calls or Llama binding later.
 
 import time
 
+
 def builtin_research(context):
     """
     pretend to fetch paper: output list of 'paper' dicts
@@ -15,9 +16,14 @@ def builtin_research(context):
     # simulate latency
     time.sleep(0.8)
     papers = [
-        {"title": f"Advances in {topic} #{i}", "abstract": f"Abstract about {topic} part {i}"} for i in range(1, 4)
+        {
+            "title": f"Advances in {topic} #{i}",
+            "abstract": f"Abstract about {topic} part {i}",
+        }
+        for i in range(1, 4)
     ]
     return {"papers": papers, "meta": {"source": "mock", "topic": topic}}
+
 
 def builtin_summarize(context):
     """
@@ -28,11 +34,13 @@ def builtin_summarize(context):
     summary = " ; ".join([p["title"] for p in papers])
     return {"summary": f"High-level summary: {summary}"}
 
+
 def echo_agent(context):
     time.sleep(0.2)
     return {"echo": context.get("input", "no input")}
 
-#model adapter placeholder: unify signature
+
+# model adapter placeholder: unify signature
 def call_model(model_label: str, prompt: str):
     """
     Very small deterministic mocked 'model call'.
@@ -40,5 +48,5 @@ def call_model(model_label: str, prompt: str):
     """
     time.sleep(0.3)
 
-    #deterministic pseudo-output
+    # deterministic pseudo-output
     return f"[{model_label}] response to: {prompt}"

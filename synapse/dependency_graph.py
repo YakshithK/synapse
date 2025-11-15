@@ -2,6 +2,7 @@
 from collections import deque, defaultdict
 from typing import List, Dict, Set, Any
 
+
 class DependencyGraph:
     """
     Manages agent dependencies and execution order.
@@ -15,11 +16,11 @@ class DependencyGraph:
     def _build_graph(self) -> Dict[str, Set[str]]:
         """Build dependency graph: agent -> set of dependencies."""
         graph = defaultdict(set)
-        agent_names = {agent['name'] for agent in self.agents}
+        agent_names = {agent["name"] for agent in self.agents}
 
         for agent in self.agents:
-            name = agent['name']
-            depends_on = agent.get('depends_on', [])
+            name = agent["name"]
+            depends_on = agent.get("depends_on", [])
 
             # handle both str and list
             if isinstance(depends_on, str):
@@ -30,7 +31,9 @@ class DependencyGraph:
             # validate dependencies exist
             for dep in depends_on:
                 if dep not in agent_names:
-                    raise ValueError(f"Agent '{name}' depends on '{dep}' which doesn't exist")
+                    raise ValueError(
+                        f"Agent '{name}' depends on '{dep}' which doesn't exist"
+                    )
                 graph[name].add(dep)
 
         return dict(graph)
@@ -47,16 +50,18 @@ class DependencyGraph:
         """
         Get topological sort of agents for execution order.
 
-        Returns: 
+        Returns:
             List of agent names in execution order
         """
 
         # Kahn's algorithm for topological sort
         in_degree = defaultdict(int)
         for agent in self.agents:
-            in_degree[agent['name']] = len(self.graph.get(agent['name'], set()))
+            in_degree[agent["name"]] = len(self.graph.get(agent["name"], set()))
 
-        queue = deque([agent['name'] for agent in self.agents if in_degree[agent['name']] == 0])
+        queue = deque(
+            [agent["name"] for agent in self.agents if in_degree[agent["name"]] == 0]
+        )
         result = []
 
         while queue:

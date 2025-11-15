@@ -16,11 +16,8 @@ app = typer.Typer()
 console = Console()
 
 # mock cost tracking for now
-MODEL_COSTS = {
-    "gpt-4": 0.03,
-    "gpt-3.5-turbo": 0.002,
-    "mock": 0.0
-}
+MODEL_COSTS = {"gpt-4": 0.03, "gpt-3.5-turbo": 0.002, "mock": 0.0}
+
 
 def format_duration(seconds: float) -> str:
     """Format duration in seconds to readable string."""
@@ -28,11 +25,13 @@ def format_duration(seconds: float) -> str:
         return f"{seconds*1000:.0f}ms"
     return f"{seconds:.1f}s"
 
+
 def calculate_cost(model: str, tokens: int = 0) -> float:
     """Calculate cost based on model and token usage."""
     # For now, return 0 or mock cost based on model
     # In real implementation, track actual token usage
     return MODEL_COSTS.get(model, 0.0) * (tokens / 1000) if tokens > 0 else 0.001
+
 
 @app.command()
 def run(
@@ -41,7 +40,6 @@ def run(
     ui: bool = typer.Option(False, "--ui", "-u", help="Start dashboard UI server"),
     port: int = typer.Option(8000, "--port", help="Port for dashboard UI"),
 ):
-
     """
     Run a Synapse workflow.
 
@@ -61,12 +59,23 @@ def run(
     if ui:
         console.print(f"[cyan]Starting dashboard on http://localhost:{port}...[/cyan]")
         dashboard_process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "synapse.dashboard.backend_app:app", "--host", "127.0.0.1", "--port", str(port)],
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "synapse.dashboard.backend_app:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        time.sleep(2) # give server time to start
-        console.print(f"[green]✓[/green] Dashboard running at http://localhost:{port}\n")
+        time.sleep(2)  # give server time to start
+        console.print(
+            f"[green]✓[/green] Dashboard running at http://localhost:{port}\n"
+        )
 
     try:
         # initialize orchestrator
@@ -86,21 +95,21 @@ def run(
         total_cost = 0.0
 
         for result in execution_results:
-            agent_name = result['agent_name']
-            status = result['status']
-            duration = result['duration']
-            attempts = result['attempts']
-            model = result['model']
+            agent_name = result["agent_name"]
+            status = result["status"]
+            duration = result["duration"]
+            attempts = result["attempts"]
+            model = result["model"]
 
             # calculate cost -- mock for now
             cost = calculate_cost(model)
             total_cost += cost
 
             # format status
-            if status == 'success':
+            if status == "success":
                 icon = "[green]✅[/green]"
                 status_text = "success"
-            elif status == 'retry_success':
+            elif status == "retry_success":
                 icon = "[yellow]✅[/yellow]"
                 status_text = f"retry #{attempts-1} failed ({result.get('error_type', 'error')}), retry #{attempts} success"
             else:
@@ -129,6 +138,7 @@ def run(
             dashboard_process.terminate()
             dashboard_process.wait()
 
+
 @app.command()
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to"),
@@ -137,12 +147,13 @@ def serve(
     """
     Launch the Synapse dashboard server.
 
-    Example: 
+    Example:
         synapse serve
         synapse server --port 3000
     """
     console.print(f"[cyan]Starting Synapse dashboard on http://{host}:{port}...[/cyan]")
     uvicorn.run("synapse.dashboard.backend_app:app", host=host, port=port, reload=True)
+
 
 if __name__ == "__main__":
     app()
