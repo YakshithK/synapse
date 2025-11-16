@@ -39,7 +39,7 @@ repos:
     hooks:
       - id: pytest-check
         name: pytest-check
-        entry: bash -c 'python -m pytest tests/ --tb=short || [ $? -eq 5 ] || exit 1'
+        entry: bash -c 'source venv/bin/activate && python -m pytest tests/ --tb=short || [ $? -eq 5 ] || exit 1'
         language: system
         pass_filenames: false
         always_run: true
