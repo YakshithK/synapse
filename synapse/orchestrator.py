@@ -45,7 +45,10 @@ class Orchestrator:
                 agent_data = self.agent_loader.load_agent(agent_file)
                 return agent_data["func"], agent_data["metadata"]
             except Exception as e:
-                raise ValueError(f"Failed to load agent {agent_file}: {str(e)}")
+                raise ValueError(
+                    f"Failed to load agent \
+                {agent_file}: {str(e)}"
+                )
         else:
             # Old schema: use builtin
             from .integrations import builtin_research, builtin_summarize, echo_agent

@@ -32,7 +32,8 @@ class DependencyGraph:
             for dep in depends_on:
                 if dep not in agent_names:
                     raise ValueError(
-                        f"Agent '{name}' depends on '{dep}' which doesn't exist"
+                        f"Agent '{name}' depends on '{dep}' \
+                        which doesn't exist"
                     )
                 graph[name].add(dep)
 

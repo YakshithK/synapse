@@ -62,7 +62,10 @@ class TraceStore:
         self._migrate_db()
 
     def _migrate_db(self) -> None:
-        """Migrate database schema to add metadata column if it doesn't exist."""
+        """
+        Migrate database schema to add
+        metadata column if it doesn't exist.
+        """
         c = self.conn.cursor()
 
         # Check if metadata column exists in nodes table

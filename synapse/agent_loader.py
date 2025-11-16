@@ -63,7 +63,8 @@ class AgentLoader:
 
     def __init__(self, agent_dir: Optional[str] = None):
         self.agent_dir = agent_dir or os.getcwd()
-        self._loaded_agents: Dict[str, Dict[str, Any]] = {}  # cache loaded agents
+        # cache loaded agents
+        self._loaded_agents: Dict[str, Dict[str, Any]] = {}
 
     def load_agent(self, agent_file: str) -> Dict[str, Any]:
         """
@@ -179,11 +180,17 @@ class AgentLoader:
         try:
             spec.loader.exec_module(module)
         except Exception as e:
-            raise ImportError(f"Error loading agent module {file_path}: {str(e)}")
+            raise ImportError(
+                f"Error loading \
+            agent module {file_path}: {str(e)}"
+            )
 
         # Then check for run function:
         if not hasattr(module, "run"):
-            raise ValueError(f"Agent file {file_path} must export a 'run' function")
+            raise ValueError(
+                f"Agent file {file_path} \
+            must export a 'run' function"
+            )
 
         func = getattr(module, "run")
 

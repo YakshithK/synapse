@@ -48,7 +48,10 @@ def run(
 
     # check if workflow file exists
     if not os.path.exists(workflow):
-        console.print(f"[red]Error:[/red] workflow file not found: {workflow}")
+        console.print(
+            f"[red]Error:[/red] workflow \
+        file not found: {workflow}"
+        )
         raise typer.Exit(1)
 
     # start dashboard if requested
