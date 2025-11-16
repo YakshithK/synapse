@@ -140,23 +140,23 @@ nodes:
    └─ current = workflow["start"]  # "researcher"
 
    WHILE current is not None:
-   
+
    a. Get agent: agent = self.agents[current]
-   
+
    b. Record context snapshot:
       ├─ version += 1
       └─ trace.record_context_version(run_id, version, current, context)
          └─ Stores in SQLite: contexts table
-   
+
    c. Execute agent:
       └─ out = agent.run(context, tracer=self.trace)
-   
+
    d. Update context:
       └─ context["last_output"] = out
-   
+
    e. Determine next node:
       └─ nxt = workflow["nodes"][current]["next"]
-   
+
    f. Continue or break:
       ├─ If nxt is None: break (workflow complete)
       └─ Else: current = nxt (continue to next node)
@@ -173,10 +173,10 @@ agent.run(context, tracer):
 ├─ attempt = 0
 ├─ last_exc = None
 └─ WHILE attempt <= retries:
-   
+
    a. attempt += 1
    b. start_time = time.time()
-   
+
    c. TRY:
       ├─ out = self.func(context)  # Call agent function
       ├─ duration = time.time() - start_time
@@ -187,7 +187,7 @@ agent.run(context, tracer):
       │     ├─ duration, attempt, model
       │     └─ error = None (success)
       └─ RETURN out
-   
+
    d. EXCEPT Exception as e:
       ├─ duration = time.time() - start_time
       ├─ err = traceback.format_exc()
@@ -197,7 +197,7 @@ agent.run(context, tracer):
       ├─ last_exc = e
       ├─ Backoff: time.sleep(min(1 * attempt, 3))
       └─ Continue loop (retry)
-   
+
    e. If all retries exhausted:
       └─ RAISE last_exc (propagates to orchestrator)
 ```
@@ -214,7 +214,7 @@ Agent 1 (researcher):
 └─ Output stored in: context["last_output"]
 
 Agent 2 (summarizer):
-├─ Input context: 
+├─ Input context:
 │  {
 │    "input": "neural rendering",
 │    "last_output": {"papers": [...], "meta": {...}}
@@ -497,4 +497,3 @@ Synapse provides a **declarative, YAML-based orchestration system** for AI agent
 - **Error handling** (retries, backoff, error propagation)
 
 The architecture is designed to be **extensible** and **observable**, making it easy to debug and monitor multi-agent workflows.
-

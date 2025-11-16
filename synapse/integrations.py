@@ -6,9 +6,10 @@ with OpenAI calls or Llama binding later.
 """
 
 import time
+from typing import Any, Dict
 
 
-def builtin_research(context):
+def builtin_research(context: Dict[str, Any]) -> Dict[str, Any]:
     """
     pretend to fetch paper: output list of 'paper' dicts
     """
@@ -25,7 +26,7 @@ def builtin_research(context):
     return {"papers": papers, "meta": {"source": "mock", "topic": topic}}
 
 
-def builtin_summarize(context):
+def builtin_summarize(context: Dict[str, Any]) -> Dict[str, Any]:
     """
     summarizer: consumes context['last_output'] or context['papers']
     """
@@ -35,13 +36,13 @@ def builtin_summarize(context):
     return {"summary": f"High-level summary: {summary}"}
 
 
-def echo_agent(context):
+def echo_agent(context: Dict[str, Any]) -> Dict[str, Any]:
     time.sleep(0.2)
     return {"echo": context.get("input", "no input")}
 
 
 # model adapter placeholder: unify signature
-def call_model(model_label: str, prompt: str):
+def call_model(model_label: str, prompt: str) -> str:
     """
     Very small deterministic mocked 'model call'.
     Replace with actual OpenAI/Claude/local llm adapter.

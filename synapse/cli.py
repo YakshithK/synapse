@@ -7,10 +7,8 @@ import time
 import typer
 import uvicorn
 from rich.console import Console
-from rich.table import Table
 
 from .orchestrator import Orchestrator
-from typing import Optional
 
 app = typer.Typer()
 console = Console()
@@ -22,7 +20,7 @@ MODEL_COSTS = {"gpt-4": 0.03, "gpt-3.5-turbo": 0.002, "mock": 0.0}
 def format_duration(seconds: float) -> str:
     """Format duration in seconds to readable string."""
     if seconds < 1:
-        return f"{seconds*1000:.0f}ms"
+        return f"{seconds * 1000:.0f}ms"
     return f"{seconds:.1f}s"
 
 
@@ -39,7 +37,7 @@ def run(
     prompt: str = typer.Option(..., "--prompt", "-p", help="Initial prompt/input"),
     ui: bool = typer.Option(False, "--ui", "-u", help="Start dashboard UI server"),
     port: int = typer.Option(8000, "--port", help="Port for dashboard UI"),
-):
+) -> None:
     """
     Run a Synapse workflow.
 
@@ -111,7 +109,11 @@ def run(
                 status_text = "success"
             elif status == "retry_success":
                 icon = "[yellow]✅[/yellow]"
-                status_text = f"retry #{attempts-1} failed ({result.get('error_type', 'error')}), retry #{attempts} success"
+                status_text = (
+                    f"retry #{attempts - 1} failed "
+                    f"({result.get('error_type', 'error')}), "
+                    f"retry #{attempts} success"
+                )
             else:
                 icon = "[red]❌[/red]"
                 status_text = "failed"
@@ -143,7 +145,7 @@ def run(
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to"),
     port: int = typer.Option(8080, "--port", help="Port to bind to"),
-):
+) -> None:
     """
     Launch the Synapse dashboard server.
 

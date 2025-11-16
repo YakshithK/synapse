@@ -1,6 +1,6 @@
 # synapse/dependancy_graph.py
-from collections import deque, defaultdict
-from typing import List, Dict, Set, Any
+from collections import defaultdict, deque
+from typing import Any, Dict, List, Set
 
 
 class DependencyGraph:
@@ -98,7 +98,7 @@ class DependencyGraph:
 
         execution_order = self.get_execution_order()
         groups = []
-        completed = set()
+        completed: Set[str] = set()
 
         while len(completed) < len(execution_order):
             # find agents with all dependencies completed

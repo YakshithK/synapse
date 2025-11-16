@@ -27,7 +27,7 @@ class Agent:
         self.metadata = metadata or {}
         self.id = str(uuid.uuid4())
 
-    def run(self, context: dict, tracer):
+    def run(self, context: Dict[str, Any], tracer: Any) -> Any:
         """
         Run the agent synchronously with enhanced error handling.
         """
@@ -67,6 +67,9 @@ class Agent:
                     metadata=self.metadata,
                 )
 
+                # Let mypy know out is a Dict[str, Any]
+                # out = cast(Dict[str, Any], out)
+
                 return out
 
             except Exception as e:
@@ -98,13 +101,13 @@ class Agent:
         raise AgentExecutionError(
             f"Agent {self.name} failed after {self.retries + 1} attempts",
             agent_name=self.name,
-            last_error=last_exc,
+            last_error=last_exc or Exception("No error"),
             context=context,
         )
 
     def _format_error(
         self, error: Exception, stack: str, context: dict
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Format error with agent context."""
         return {
             "message": str(error),
@@ -112,7 +115,7 @@ class Agent:
             "stack": stack,
             "agent": self.name,
             "context_keys": list(context.keys()),
-            "context_size": len(str(context)),
+            "context_size": str(len(str(context))),
         }
 
 
@@ -123,8 +126,8 @@ class AgentExecutionError(Exception):
         self,
         message: str,
         agent_name: str,
-        last_error: Exception = None,
-        context: dict = None,
+        last_error: Optional[Exception] = None,
+        context: Optional[Dict[str, Any]] = None,
     ):
         self.message = message
         self.agent_name = agent_name

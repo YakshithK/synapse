@@ -1,7 +1,7 @@
 # synapse/orchestrator.py
 import time
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .agent import Agent
 from .agent_loader import AgentLoader
@@ -15,15 +15,17 @@ class Orchestrator:
         self.workflow_path = workflow_path
         self.workflow = load_workflow(workflow_path)
         self.trace = TraceStore()
-        self.run_id = None
-        self.agents = {}
+        self.run_id: Optional[str] = None
+        self.agents: Dict[str, Agent] = {}
         self.agent_loader = AgentLoader(agent_dir=self.workflow.get("workflow_dir"))
-        self.execution_results = []
+        self.execution_order: Optional[List[str]] = None
 
         # Backward compatibility: check if old schema
         self.use_new_schema = self.workflow.get("schema_version") == "2.0"
 
-    def _resolve_agent_function(self, agent_config: Dict[str, Any]):
+    def _resolve_agent_function(
+        self, agent_config: Dict[str, Any]
+    ) -> Tuple[Callable[..., Any], Dict[str, Any]]:
         """
         Resolve agent function from configuration.
 
@@ -60,7 +62,7 @@ class Orchestrator:
 
             return func, metadata
 
-    def _instantiate_agents(self):
+    def _instantiate_agents(self) -> None:
         """Instantiate agents from workflow configuration."""
         if self.use_new_schema:
             # New schema: use dependency graph
@@ -115,7 +117,7 @@ class Orchestrator:
             self.execution_order = None
             self.start_node = self.workflow.get("start")
 
-    def run(self, initial_input: str):
+    def run(self, initial_input: str) -> Dict[str, Any]:
         """Run workflow with initial input."""
         # Start run
         self.run_id = str(uuid.uuid4())
@@ -130,6 +132,8 @@ class Orchestrator:
 
         if self.use_new_schema:
             # New schema: execute based on dependency order
+            if self.execution_order is None:
+                raise ValueError("Execution order not initialized for new schema")
             for agent_name in self.execution_order:
                 agent = self.agents.get(agent_name)
                 if not agent:
@@ -142,11 +146,9 @@ class Orchestrator:
 
                 # Track execution
                 agent_start = time.time()
-                last_error = None
                 attempts = 0
 
                 try:
-
                     out = agent.run(context, tracer=self.trace)
                     agent_duration = time.time() - agent_start
                     attempts = 1
@@ -218,6 +220,6 @@ class Orchestrator:
         self.trace.record_context_version(self.run_id, version, "end", context)
         return {"run_id": self.run_id, "final_context": context}
 
-    def get_execution_results(self):
+    def get_execution_results(self) -> List[Dict[str, Any]]:
         """Get execution results for CLI display."""
         return self.execution_results

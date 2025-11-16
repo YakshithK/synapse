@@ -2,9 +2,10 @@
 import json
 import os
 import sqlite3
+from typing import Any, Dict, List
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 DB = os.path.join(os.getcwd(), "synapse_traces.db")
@@ -15,13 +16,14 @@ templates = Jinja2Templates(
 
 
 @app.get("/api/runs")
-def runs(limit: int = 50):
+def runs(limit: int = 50) -> List[Dict[str, Any]]:
     if not os.path.exists(DB):
         return []
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
     cur.execute(
-        "SELECT run_id, started_at, workflow FROM runs ORDER BY started_at DESC LIMIT ?",
+        """SELECT run_id, started_at, workflow "
+        "FROM runs ORDER BY started_at DESC LIMIT ?""",
         (limit,),
     )
     rows = cur.fetchall()
@@ -30,7 +32,7 @@ def runs(limit: int = 50):
 
 
 @app.get("/api/nodes/{run_id}")
-def nodes(run_id: str):
+def nodes(run_id: str) -> List[Dict[str, Any]]:
     if not os.path.exists(DB):
         raise HTTPException(status_code=404, detail="DB not found")
     conn = sqlite3.connect(DB)
@@ -44,12 +46,16 @@ def nodes(run_id: str):
 
         if has_metadata:
             cur.execute(
-                "SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model, metadata FROM nodes WHERE run_id=? ORDER BY ts ASC",
+                """SELECT id, agent_id, name, input_json, output_json, "
+                "duration, attempt, error, ts, model, metadata "
+                "FROM nodes WHERE run_id=? ORDER BY ts ASC""",
                 (run_id,),
             )
         else:
             cur.execute(
-                "SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model FROM nodes WHERE run_id=? ORDER BY ts ASC",
+                """SELECT id, agent_id, name, input_json, output_json, "
+                "duration, attempt, error, ts, model"
+                "FROM nodes WHERE run_id=? ORDER BY ts ASC""",
                 (run_id,),
             )
 
@@ -74,10 +80,12 @@ def nodes(run_id: str):
                 node["metadata"] = None
             out.append(node)
         return out
-    except Exception as e:
+    except Exception:
         # Fallback to old schema if error occurs
         cur.execute(
-            "SELECT id, agent_id, name, input_json, output_json, duration, attempt, error, ts, model FROM nodes WHERE run_id=? ORDER BY ts ASC",
+            """SELECT id, agent_id, name, input_json, output_json, "
+            "duration, attempt, error, ts, model "
+            "FROM nodes WHERE run_id=? ORDER BY ts ASC""",
             (run_id,),
         )
         rows = cur.fetchall()
@@ -102,13 +110,14 @@ def nodes(run_id: str):
 
 
 @app.get("/api/contexts/{run_id}")
-def contexts(run_id: str):
+def contexts(run_id: str) -> List[Dict[str, Any]]:
     if not os.path.exists(DB):
         raise HTTPException(status_code=404, detail="DB not found")
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
     cur.execute(
-        "SELECT version, node_name, ctx_json, ts FROM contexts WHERE run_id=? ORDER BY version ASC",
+        """SELECT version, node_name, ctx_json, ts
+        FROM contexts WHERE run_id=? ORDER BY version ASC""",
         (run_id,),
     )
     rows = cur.fetchall()
@@ -120,6 +129,6 @@ def contexts(run_id: str):
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+def index(request: Request) -> HTMLResponse:
     # simple UI served from template
     return templates.TemplateResponse("index.html", {"request": request})

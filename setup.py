@@ -1,5 +1,5 @@
 # setup.py
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -13,7 +13,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/YakshithK/synapse",
-    packages=find_packages(exclude=["venv", "tests", "examples", "scripts", "dashboard"]),
+    packages=find_packages(
+        exclude=["venv", "tests", "examples", "scripts", "dashboard"]
+    ),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -37,11 +39,12 @@ setup(
     ],
     extras_require={
         "dev": [
-            "pytest>=7.0.0",
-            "black>=23.0.0",
-            "isort>=5.12.0",
-            "mypy>=1.0.0",
-            "pytest-cov>=4.0.0",
+            "pytest",
+            "black",
+            "isort",
+            "mypy",
+            "pytest-cov",
+            "pre-commit",
         ],
     },
     entry_points={
@@ -54,7 +57,7 @@ setup(
         "synapse": [
             "py.typed",
             "templates/*.html",  # Include dashboard templates
-            "static/*",          # Include static files
+            "static/*",  # Include static files
         ],
     },
     project_urls={

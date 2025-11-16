@@ -271,4 +271,3 @@ Synapse provides a **declarative, YAML-based orchestration system** for AI agent
 - **Error handling** (retries, backoff, error propagation)
 
 The architecture is designed to be **extensible** and **observable**, making it easy to debug and monitor multi-agent workflows.
-

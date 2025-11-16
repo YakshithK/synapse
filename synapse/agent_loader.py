@@ -3,7 +3,7 @@ import ast
 import importlib.util
 import os
 import sys
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 
 class AgentLoader:
@@ -63,7 +63,7 @@ class AgentLoader:
 
     def __init__(self, agent_dir: Optional[str] = None):
         self.agent_dir = agent_dir or os.getcwd()
-        self._loaded_agents = {}  # cache loaded agents
+        self._loaded_agents: Dict[str, Dict[str, Any]] = {}  # cache loaded agents
 
     def load_agent(self, agent_file: str) -> Dict[str, Any]:
         """
@@ -158,7 +158,7 @@ class AgentLoader:
         analyzer.visit(tree)
         return analyzer.get_report()
 
-    def _load_agent_function(self, file_path: str) -> Callable:
+    def _load_agent_function(self, file_path: str) -> Callable[..., Any]:
         """
         Load agent function from Python file.
 
@@ -193,7 +193,8 @@ class AgentLoader:
                 f"Agent file {file_path} must export a callable 'run' function"
             )
 
-        return func
+        # Cast to help mypy know the type
+        return cast(Callable[..., Any], func)
 
     def _extract_metadata(self, file_path: str, func: Callable) -> Dict[str, Any]:
         """
@@ -220,27 +221,27 @@ class SecurityAnalyzer(ast.NodeVisitor):
     AST visitor to analyze agent code for security issues.
     """
 
-    def __init__(self):
-        self.imports = []
-        self.dangerous_ops = []
-        self.warnings = []
-        self.safe = True
+    def __init__(self) -> None:
+        self.imports: List[str] = []
+        self.dangerous_ops: List[str] = []
+        self.warnings: List[str] = []
+        self.safe: bool = True
 
-    def visit_Import(self, node):
+    def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
             self.imports.append(alias.name)
             if alias.name in AgentLoader.BLOCKED_IMPORTS:
                 self.safe = False
                 self.warnings.append(f"Blocked import: {alias.name}")
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module:
             self.imports.append(node.module)
             if node.module in AgentLoader.BLOCKED_IMPORTS:
                 self.safe = False
                 self.warnings.append(f"Blocked import: {node.module}")
 
-    def visit_Call(self, node):
+    def visit_Call(self, node: ast.Call) -> None:
         # check for dangerous function calls
         if isinstance(node.func, ast.Name):
             if node.func.id in ["eval", "exec", "compile"]:

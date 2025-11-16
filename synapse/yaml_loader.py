@@ -1,6 +1,6 @@
 # synapse/yaml_loader.py
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import yaml
 
@@ -73,7 +73,6 @@ def _convert_old_schema(doc: Dict[str, Any], workflow_path: str) -> Dict[str, An
     nodes = doc.get("nodes", {})
 
     agents = []
-    agent_names = list(nodes.keys())
 
     # Convert nodes to agents
     for name, node in nodes.items():
