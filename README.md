@@ -28,41 +28,18 @@ pip install agent-synapse
 
 ## Quick Start
 
-1. Create a workflow file `my_workflow.yaml`:
-
-```yaml
-name: Research Workflow
-schema_version: "2.0"
-
-description: >
-  A sample workflow that demonstrates Synapse's capabilities
-  for orchestrating AI agents in a research pipeline.
-
-agents:
-  - name: researcher
-    description: Researches a given topic
-    model: gpt-4
-    run: research_agent.py
-    inputs:
-      - topic: str
-    outputs:
-      - research_summary: str
-
-  - name: writer
-    description: Writes a blog post based on research
-    model: gpt-4
-    run: writer_agent.py
-    depends_on: [researcher]
-    inputs:
-      - research: !ref researcher.outputs.research_summary
-    outputs:
-      - blog_post: str
-```
-
-2. Run the workflow:
+1. Initialize a new Synapse project:
 
 ```bash
-synapse run my_workflow.yaml --prompt "neural rendering"
+synapse init
+```
+
+This creates an `agents/` directory with demo agents (`summarize.py` and `classify.py`) and a `workflow.yaml` file.
+
+2. Run the demo workflow:
+
+```bash
+synapse run workflow.yaml --prompt "Your text here"
 ```
 
 3. View the dashboard (optional):
@@ -71,6 +48,8 @@ synapse run my_workflow.yaml --prompt "neural rendering"
 synapse serve
 # Open http://localhost:8080 in your browser
 ```
+
+4. Modify the agents in the `agents/` directory to suit your needs!
 
 ## Documentation
 

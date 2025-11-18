@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import typer
 import uvicorn
@@ -29,6 +30,162 @@ def calculate_cost(model: str, tokens: int = 0) -> float:
     # For now, return 0 or mock cost based on model
     # In real implementation, track actual token usage
     return MODEL_COSTS.get(model, 0.0) * (tokens / 1000) if tokens > 0 else 0.001
+
+
+def create_demo_agent(agent_path: Path, agent_name: str, agent_code: str) -> None:
+    """Create a demo agent file with the given code."""
+    agent_path.write_text(agent_code)
+    console.print(f"[green]✓[/green] Created {agent_name}")
+
+
+@app.command()
+def init() -> None:
+    """
+    Initialize a new Synapse project with demo agents.
+
+    Creates an agents/ directory with summarize.py and classify.py demo
+    agents.
+    """
+    console.print("[cyan]Initializing Synapse project...[/cyan]\n")
+
+    # Create agents directory
+    agents_dir = Path("agents")
+    agents_dir.mkdir(exist_ok=True)
+    console.print(f"[green]✓[/green] Created {agents_dir}/ directory")
+
+    # Demo agent: summarize.py
+    summarize_code = '''# agents/summarize.py
+"""
+Summarize Agent
+
+This agent takes text input and generates a concise summary.
+"""
+
+def run(context: dict) -> dict:
+    """
+    Summarize agent function.
+
+    Args:
+        context: Dictionary with 'input' key containing text to summarize
+
+    Returns:
+        Dictionary with 'summary' key containing the summarized text
+    """
+    text = context.get("input", "")
+
+    # Simulate summarization (in real implementation, this would call an LLM)
+    if len(text) > 100:
+        summary = text[:100] + "..." if len(text) > 100 else text
+        summary = f"Summary: {summary}"
+    else:
+        summary = f"Summary: {text}" if text else "No input provided"
+
+    return {
+        "summary": summary,
+        "meta": {
+            "original_length": len(text),
+            "summary_length": len(summary),
+            "source": "summarize_agent"
+        }
+    }
+'''
+
+    # Demo agent: classify.py
+    classify_code = '''# agents/classify.py
+"""
+Classify Agent
+
+This agent categorizes text input into predefined categories.
+"""
+
+def run(context: dict) -> dict:
+    """
+    Classify agent function.
+
+    Args:
+        context: Dictionary with 'input' key containing text to classify
+
+    Returns:
+        Dictionary with 'category' and 'confidence' keys
+    """
+    text = context.get("input", "")
+
+    # Simple keyword-based classification (in real implementation, use LLM)
+    categories = {
+        "technology": ["code", "software", "computer", "algorithm", "data"],
+        "business": ["market", "revenue", "profit", "customer", "strategy"],
+        "science": ["research", "experiment", "study", "analysis", "theory"],
+        "general": []  # fallback category
+    }
+
+    text_lower = text.lower()
+    best_category = "general"
+    max_matches = 0
+
+    for category, keywords in categories.items():
+        if category == "general":
+            continue
+        matches = sum(1 for keyword in keywords if keyword in text_lower)
+        if matches > max_matches:
+            max_matches = matches
+            best_category = category
+
+    confidence = (
+        min(0.9, 0.3 + (max_matches * 0.2)) if max_matches > 0 else 0.1
+    )
+
+    return {
+        "category": best_category,
+        "confidence": confidence,
+        "meta": {
+            "text_length": len(text),
+            "keyword_matches": max_matches,
+            "source": "classify_agent"
+        }
+    }
+'''
+
+    # Create demo agent files
+    create_demo_agent(agents_dir / "summarize.py", "summarize.py", summarize_code)
+    create_demo_agent(agents_dir / "classify.py", "classify.py", classify_code)
+
+    # Create example workflow
+    workflow_code = """# workflow.yaml
+workflow:
+  name: demo-pipeline
+  agents:
+    - name: SummarizeAgent
+      run: agents/summarize.py
+      retries: 2
+      model: gpt-4
+      description: "Summarizes input text"
+      timeout: 30
+
+    - name: ClassifyAgent
+      run: agents/classify.py
+      retries: 1
+      model: gpt-4
+      description: "Classifies the summarized text"
+      timeout: 30
+      depends_on: SummarizeAgent
+"""
+
+    workflow_path = Path("workflow.yaml")
+    workflow_path.write_text(workflow_code)
+    console.print("[green]✓[/green] Created workflow.yaml")
+
+    console.print(
+        "\n[bold green]✓ Synapse project " "initialized successfully![/bold green]"
+    )
+    console.print("\n[cyan]Next steps:[/cyan]")
+    console.print(
+        "1. Try running: [yellow]synapse run workflow.yaml --prompt "
+        '"Your text here"[/yellow]'
+    )
+    console.print("2. Start dashboard: [yellow]synapse serve[/yellow]")
+    console.print(
+        "3. Check the [yellow]agents/[/yellow] " "directory to modify the demo agents"
+    )
 
 
 @app.command()
