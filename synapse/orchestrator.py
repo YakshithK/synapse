@@ -15,6 +15,7 @@ class Orchestrator:
         self.workflow_path = workflow_path
         self.workflow = load_workflow(workflow_path)
         self.trace = TraceStore()
+        # Initialize run_id as None, will be set in run()
         self.run_id: Optional[str] = None
         self.agents: Dict[str, Agent] = {}
         self.agent_loader = AgentLoader(agent_dir=self.workflow.get("workflow_dir"))
@@ -123,8 +124,10 @@ class Orchestrator:
     def run(self, initial_input: str) -> Dict[str, Any]:
         """Run workflow with initial input."""
         # Start run
-        self.run_id = str(uuid.uuid4())
+        if self.run_id is None:
+            self.run_id = str(uuid.uuid4())
         workflow_name = self.workflow.get("workflow_name", "unnamed")
+        # We can safely use self.run_id here as we just ensured it's not None
         self.trace.start_run(self.run_id, workflow=workflow_name)
         self.trace.current_run_id = self.run_id
         self._instantiate_agents()

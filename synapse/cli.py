@@ -1,9 +1,15 @@
 # synapse/cli.py
+import functools
+import json
 import os
-import subprocess
+import select
 import sys
-import time
+import termios
+import threading
+import tty
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable, Optional
 
 import typer
 import uvicorn
@@ -16,6 +22,27 @@ console = Console()
 
 # mock cost tracking for now
 MODEL_COSTS = {"gpt-4": 0.03, "gpt-3.5-turbo": 0.002, "mock": 0.0}
+
+
+PROJECT_CONFIG_FILE = ".synapse/config.json"
+
+
+def getch(
+    timeout: float = 0.1,
+) -> Optional[str]:  # Reduced timeout for more responsive log updates
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        rlist, _, _ = select.select([sys.stdin], [], [], timeout)
+        if rlist:
+            ch = sys.stdin.read(1)
+            if ch == "\x03":  # Ctrl+C
+                raise KeyboardInterrupt()
+            return ch
+        return None
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
 def format_duration(seconds: float) -> str:
@@ -38,6 +65,21 @@ def create_demo_agent(agent_path: Path, agent_name: str, agent_code: str) -> Non
     console.print(f"[green]✓[/green] Created {agent_name}")
 
 
+def is_initialized() -> bool:
+    """Check if the project is initialized by looking for the config file."""
+    return Path(PROJECT_CONFIG_FILE).exists()
+
+
+def ensure_initialized() -> None:
+    """Ensure the project is intiialized, or exit with an error."""
+    if not is_initialized():
+        console.print(
+            "[red]Error:[/red] Project not initialized. \
+            Please run 'synapse init' first."
+        )
+        raise typer.Exit(1)
+
+
 @app.command()
 def init() -> None:
     """
@@ -46,7 +88,20 @@ def init() -> None:
     Creates an agents/ directory with summarize.py and classify.py demo
     agents.
     """
+    if is_initialized():
+        console.print("[yellow]Project is already initialized.[/yellow]")
+        raise typer.Exit(1)
+
     console.print("[cyan]Initializing Synapse project...[/cyan]\n")
+
+    # Create .synapse dir
+    config_dir = Path(".synapse")
+    config_dir.mkdir(exist_ok=True)
+
+    # Create config file
+    config = {"version": "1.0", "initialized_at": datetime.now().isoformat()}
+
+    Path(PROJECT_CONFIG_FILE).write_text(json.dumps(config, indent=2))
 
     # Create agents directory
     agents_dir = Path("agents")
@@ -188,19 +243,28 @@ workflow:
     )
 
 
+def requires_init(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to ensure the project is initialized before running a command."""
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        ensure_initialized()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @app.command()
+@requires_init
 def run(
     workflow: str = typer.Argument(..., help="Path to workflow YAML file"),
     prompt: str = typer.Option(..., "--prompt", "-p", help="Initial prompt/input"),
-    ui: bool = typer.Option(False, "--ui", "-u", help="Start dashboard UI server"),
-    port: int = typer.Option(8000, "--port", help="Port for dashboard UI"),
 ) -> None:
     """
     Run a Synapse workflow.
 
     Example:
         synapse run pipeline.yaml --prompt "research neural rendering"
-        synapse run pipeline.yaml --prompt "research neural rendering" --ui
     """
 
     # check if workflow file exists
@@ -210,30 +274,6 @@ def run(
         file not found: {workflow}"
         )
         raise typer.Exit(1)
-
-    # start dashboard if requested
-    dashboard_process = None
-
-    if ui:
-        console.print(f"[cyan]Starting dashboard on http://localhost:{port}...[/cyan]")
-        dashboard_process = subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                "uvicorn",
-                "synapse.dashboard.backend_app:app",
-                "--host",
-                "127.0.0.1",
-                "--port",
-                str(port),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        time.sleep(2)  # give server time to start
-        console.print(
-            f"[green]✓[/green] Dashboard running at http://localhost:{port}\n"
-        )
 
     try:
         # initialize orchestrator
@@ -251,11 +291,6 @@ def run(
         console.print(
             "[dim]The workflow will continue running in the background.[/dim]\n"
         )
-
-        # Start workflow in background thread
-        import json
-        import threading
-        from datetime import datetime
 
         def run_workflow() -> None:
             try:
@@ -304,17 +339,8 @@ def run(
                 run_file.write_text(json.dumps(error_data, indent=2))
 
         # Start the workflow in a background thread
-        thread = threading.Thread(target=run_workflow, daemon=True)
+        thread = threading.Thread(target=run_workflow)
         thread.start()
-
-        if ui:
-            console.print(f"\n[cyan]Dashboard:[/cyan] http://localhost:{port}")
-            # Keep the main thread alive if UI is requested
-            try:
-                while dashboard_process and dashboard_process.poll() is None:
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                pass
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted by user[/yellow]")
@@ -322,14 +348,10 @@ def run(
     except Exception as e:
         console.print(f"\n[red]Error:[/red] {str(e)}")
         raise typer.Exit(1)
-    finally:
-        # Clean up dashboard process
-        if dashboard_process:
-            dashboard_process.terminate()
-            dashboard_process.wait()
 
 
 @app.command()
+@requires_init
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to"),
     port: int = typer.Option(8080, "--port", help="Port to bind to"),
@@ -346,6 +368,7 @@ def serve(
 
 
 @app.command()
+@requires_init
 def logs(
     follow: bool = typer.Option(
         True, "--follow", "-f", help="Follow logs in real-time"
@@ -362,9 +385,6 @@ def logs(
         synapse logs --follow           # Follow logs in real-time
         synapse logs --run-id abc123    # Show logs for specific run
     """
-    import json
-    import time
-    from datetime import datetime
 
     logs_dir = Path(".synapse/logs")
 
@@ -493,12 +513,12 @@ def logs(
 
     # Follow mode - keep updating
     if follow and not run_id:
-        console.print("\n[dim]Following logs... Press Ctrl+C to exit[/dim]\n")
+        console.print("\n[dim]Following logs... Press Ctrl+C to exit[/dim]")
         last_mtime = log_files[0].stat().st_mtime
 
         try:
             while True:
-                time.sleep(1)  # Check every second
+                getch(timeout=0.1)
 
                 # Check for new logs or updates
                 current_log_files = list(logs_dir.glob("run_*.json"))
