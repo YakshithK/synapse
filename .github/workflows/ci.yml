@@ -241,6 +241,20 @@ jobs:
           # Get version from setup.py
           VERSION=$(python -c "import re; content = open('setup.py').read(); print(re.search(r'version=\"([^\"]+)\"', content).group(1))")
 
-          # Create and push tag
-          git tag -a "v$VERSION" -m "Release $VERSION"
-          git push origin "v$VERSION"
+          # Check if the version was bumped in the dev branch before the merge
+          if git log --grep='chore: bump version' -1 dev | grep -q 'chore: bump version'; then
+            # Get the last version bump commit from dev
+            LAST_VERSION_BUMP=$(git log --grep='chore: bump version' -1 --pretty=format:"%H" dev)
+
+            # Check if this version bump is already tagged
+            if ! git describe --exact-match --tags $LAST_VERSION_BUMP 2>/dev/null; then
+              # Create and push tag if not already tagged
+              echo "Creating new release tag v$VERSION"
+              git tag -a "v$VERSION" -m "Release $VERSION"
+              git push origin "v$VERSION"
+            else
+              echo "Version $VERSION was already tagged"
+            fi
+          else
+            echo "No version bump detected in dev branch, skipping tag creation"
+          fi
