@@ -52,7 +52,7 @@ jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, version_management]
 
     steps:
     - name: Checkout code
@@ -72,7 +72,7 @@ jobs:
   release:
     name: Release Package
     runs-on: ubuntu-latest
-    needs: [test, build]
+    needs: [test, build, version_management]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -201,6 +201,8 @@ jobs:
     name: Version Management
     runs-on: ubuntu-latest
     needs: test
+    # This job will run on both dev and main, but do different things
+    # based on which branch triggered it
     if: |
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') &&
       github.event_name == 'push'
