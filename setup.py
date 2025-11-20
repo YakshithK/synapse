@@ -36,6 +36,7 @@ setup(
         "sqlalchemy>=2.0.0",
         "pydantic>=2.0.0",
         "rich>=13.0.0",
+        "bump2version>=1.0.1",
     ],
     extras_require={
         "dev": [
