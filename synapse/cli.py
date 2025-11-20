@@ -1,9 +1,13 @@
 # synapse/cli.py
+import functools
+import json
 import os
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable
 
 import typer
 import uvicorn
@@ -16,6 +20,9 @@ console = Console()
 
 # mock cost tracking for now
 MODEL_COSTS = {"gpt-4": 0.03, "gpt-3.5-turbo": 0.002, "mock": 0.0}
+
+
+PROJECT_CONFIG_FILE = ".synapse/config.json"
 
 
 def format_duration(seconds: float) -> str:
@@ -38,6 +45,21 @@ def create_demo_agent(agent_path: Path, agent_name: str, agent_code: str) -> Non
     console.print(f"[green]✓[/green] Created {agent_name}")
 
 
+def is_initialized() -> bool:
+    """Check if the project is initialized by looking for the config file."""
+    return Path(PROJECT_CONFIG_FILE).exists()
+
+
+def ensure_initialized() -> None:
+    """Ensure the project is intiialized, or exit with an error."""
+    if not is_initialized():
+        console.print(
+            "[red]Error:[/red] Project not initialized. \
+            Please run 'synapse init' first."
+        )
+        raise typer.Exit(1)
+
+
 @app.command()
 def init() -> None:
     """
@@ -46,7 +68,20 @@ def init() -> None:
     Creates an agents/ directory with summarize.py and classify.py demo
     agents.
     """
+    if is_initialized():
+        console.print("[yellow]Project is already initialized.[/yellow]")
+        raise typer.Exit(1)
+
     console.print("[cyan]Initializing Synapse project...[/cyan]\n")
+
+    # Create .synapse dir
+    config_dir = Path(".synapse")
+    config_dir.mkdir(exist_ok=True)
+
+    # Create config file
+    config = {"version": "1.0", "initialized_at": datetime.now().isoformat()}
+
+    Path(PROJECT_CONFIG_FILE).write_text(json.dumps(config, index=2))
 
     # Create agents directory
     agents_dir = Path("agents")
@@ -188,7 +223,19 @@ workflow:
     )
 
 
+def requires_init(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to ensure the project is initialized before running a command."""
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        ensure_initialized()
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @app.command()
+@requires_init
 def run(
     workflow: str = typer.Argument(..., help="Path to workflow YAML file"),
     prompt: str = typer.Option(..., "--prompt", "-p", help="Initial prompt/input"),
@@ -330,6 +377,7 @@ def run(
 
 
 @app.command()
+@requires_init
 def serve(
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to"),
     port: int = typer.Option(8080, "--port", help="Port to bind to"),
@@ -346,6 +394,7 @@ def serve(
 
 
 @app.command()
+@requires_init
 def logs(
     follow: bool = typer.Option(
         True, "--follow", "-f", help="Follow logs in real-time"
