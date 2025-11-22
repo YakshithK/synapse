@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="agent-synapse",
-    version="0.2.1",
+    version="0.2.2",
     author="Yakshith Kommineni",
     author_email="yakshith.kommineni@gmail.com",
     description="Kubernetes-like orchestration system for AI agents",
