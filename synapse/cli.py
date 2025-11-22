@@ -104,7 +104,7 @@ def init() -> None:
     Path(PROJECT_CONFIG_FILE).write_text(json.dumps(config, indent=2))
 
     # Create agents directory
-    agents_dir = Path("agents")
+    agents_dir = Path(".synapse/agents")
     agents_dir.mkdir(exist_ok=True)
     console.print(f"[green]✓[/green] Created {agents_dir}/ directory")
 
@@ -225,7 +225,10 @@ workflow:
       depends_on: SummarizeAgent
 """
 
-    workflow_path = Path("workflow.yaml")
+    config_dir = Path(".synapse/workflows")  # create workflow dir
+    config_dir.mkdir(exist_ok=True)
+
+    workflow_path = Path(".synapse/workflows/workflow.yaml")
     workflow_path.write_text(workflow_code)
     console.print("[green]✓[/green] Created workflow.yaml")
 

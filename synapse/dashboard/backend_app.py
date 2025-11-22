@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-DB = os.path.join(os.getcwd(), "synapse_traces.db")
+DB = os.path.join(os.getcwd(), ".synapse/synapse_traces.db")
 app = FastAPI()
 templates = Jinja2Templates(
     directory=os.path.join(os.getcwd(), "dashboard", "templates")

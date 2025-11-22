@@ -5,7 +5,7 @@ import sqlite3
 import time
 from typing import Any, Dict, List, Optional
 
-DB_PATH = os.path.join(os.getcwd(), "synapse_traces.db")
+DB_PATH = os.path.join(os.getcwd(), ".synapse/synapse_traces.db")
 
 
 class TraceStore:
